@@ -22,30 +22,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-public struct StandardOutputAppender: Appender {
+public class StandardOutputAppender : Appender {
     public let name: String
-    public var closed: Bool
-    public var level: Log.Level
-
-    public init(name: String = "Standard Output Appender", closed: Bool = false, level: Log.Level = .all) {
+    public var levels: Logger.Level
+    var lastMessage: String = ""
+    
+    init(name: String = "Standard Output Appender", levels: Logger.Level = .all) {
         self.name = name
-        self.closed = closed
-        self.level = level
+        self.levels = levels
     }
-
-    public func append(_ event: LoggingEvent) {
+    
+    public func append(event: Logger.Event) {
         var logMessage = ""
-
-        logMessage += "[\(event.timestamp)]"
-        logMessage += "[\(event.locationInfo.description)]"
-
+        
+        defer {
+            lastMessage = logMessage
+        }
+        
+        guard levels.contains(event.level) else {
+            return
+        }
+        
+        logMessage += "[" + event.timestamp + "]"
+        logMessage += "[" + String(describing: event.locationInfo) + "]"
+        
         if let message = event.message {
-            logMessage += ": \(message)"
+            logMessage += ":" + String(describing: message)
         }
+        
         if let error = event.error {
-            logMessage += ": \(error)"
+            logMessage += ":" + String(describing: error)
         }
-
+        
         print(logMessage)
     }
 }
